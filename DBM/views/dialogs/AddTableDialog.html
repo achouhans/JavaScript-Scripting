@@ -1,0 +1,36 @@
+<script type="text/javascript">
+    $(document).ready(function ($) {
+        $('.multipleTableSelect').select2({
+            placeholder: "Search and Select Table's ...",
+            width : '100%',
+            closeOnSelect:false
+        });
+
+        var data = {"databaseKey" :activeNode.key, "serverKey": activeNode.parent.key};
+
+        loadTables(data)
+            .done(
+                    function(data, status, jqXHR) {
+                        $.each(data, function(i,item){
+                            // Create and append the new options into the select list
+                            $("#tableName").append("<option>"+item.value+"</option>");
+                        });
+                    }
+                )
+            .fail(
+                    function(jqXHR,status,err) {
+                        alert("Error loading Tables " + err);
+                    }
+            );
+    });
+</script>
+<form id="addTableForm" class="form-horizontal">
+    <div class="form-group">
+        <label class="col-sm-2 control-label">Select Table/s:</label>
+        <div class="col-sm-10">
+            <select class="form-control multipleTableSelect select2-arrow" id="tableName" multiple="multiple"
+                    aria-hidden="true" tabindex="-1">
+            </select>
+        </div>
+    </div>
+</form>

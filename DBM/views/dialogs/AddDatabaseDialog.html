@@ -1,0 +1,27 @@
+<script type="text/javascript">
+  $(document).ready(function ($) {
+        loadDatabases(activeNode.key)
+            .done(
+                    function(data, status, jqXHR) {
+                        $.each(data, function(i,item){
+                            // Create and append the new options into the select list
+                            $("#databaseName").append("<option>"+item.value+"</option>");
+                        });
+                    }
+                )
+            .fail(
+                    function(jqXHR,status,err) {
+                        alert("Error loading Databases " + err);
+                    }
+            );
+});
+</script>
+<form id="addDatabaseForm" class="form-horizontal">
+    <div class="form-group">
+        <label class="col-sm-2 control-label">Select a Database:</label>
+        <div class="col-sm-10">
+            <select class="form-control" id="databaseName">
+            </select>
+        </div>
+    </div>
+</form>

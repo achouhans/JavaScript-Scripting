@@ -1,0 +1,12 @@
+{
+    "jobScheduleName" : "Sqoop Job Schedule Recurring Monthly Day Specific",
+    "scheduleType" : "Recurring",
+    "scheduleEnabled" : true,
+    "frequency": "Monthly",
+    "daySpecific": true,
+    "dayOf": "2",
+    "daySpecificEveryMonthOf": "2",
+    "startDateDuration": "09/09/2015",
+    "endDateDuration": "10/01/2015",
+    "noEndDate": false
+}

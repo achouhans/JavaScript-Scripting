@@ -1,0 +1,120 @@
+<script>
+var initSourceAndHiveType = function(){
+    loadSourceType()
+            .done(
+                function(data, status, jqXHR) {
+                    $.each(data, function(i,item){
+                        $("#sourceType").append("<option>"+item.value+"</option>");
+                    });
+                    loadHiveType()
+                            .done(
+                                function(data, status, jqXHR) {
+                                    $.each(data, function(i,item){
+                                        $("#hiveType").append("<option>"+item.value+"</option>");
+                                    });
+                                    populateTypeMappingTabData(selectedNode);
+                                }
+                            )
+                            .fail(
+                                function(jqXHR,status,err) {
+                                    alert("Error loading Hive Type " + err);
+                                }
+                    );
+                }
+            )
+            .fail(
+                function(jqXHR,status,err) {
+                    alert("Error loading Source Type " + err);
+                }
+        );
+};
+
+(function () {
+    $(document).on('click', '.addTabrow', function (e) {
+        var clone, formsList;
+
+        e.preventDefault();
+        formsList = $('#formList');
+        clone = formsList.children('.form-group:first').clone(true);
+        clone.append($('<button style="margin-left: 3%;"><br><br>').addClass('btn btn-danger remove-me removeTabrow').html('-'));
+        clone.find('input').val('').attr('id', function () {
+            return $(this).attr('id') + '_' + (formsList.children('.form-group').length + 1);
+        });
+        return formsList.append(clone);
+    });
+
+    $(document).on('click', '.removeTabrow', function (e) {
+        e.preventDefault();
+        return $(this).parent().remove();
+    });
+}.call(this));
+
+var populateTypeMappingTabData = function(data){
+    if(data != null && data.refKey == "database"){
+        var getTypeMappinglist = data.data.typeMappingList;
+        if(getTypeMappinglist.length == 0 || getTypeMappinglist == null || getTypeMappinglist == undefined)
+            return;
+
+        $('#sourceType').val(getTypeMappinglist[0].sourceType);
+        $('#hiveType').val(getTypeMappinglist[0].hiveType);
+
+        var clone, formsList = $('#formList');
+        $.each(getTypeMappinglist, function(i){
+               if(i == 0)
+                  return 1==1;
+                clone = formsList.children('.form-group:first').clone(true);
+                $(clone).find('#sourceType').val(getTypeMappinglist[i].sourceType);
+                $(clone).find('#hiveType').val(getTypeMappinglist[i].hiveType);
+                clone.append($('<button style="margin-left: 3%;"><br><br>').addClass('btn btn-danger remove-me removeTabrow').html('-'));
+                /*clone.find('input').val('').attr('id', function () {
+                    return $(this).attr('id') + '_' + (formsList.children('.form-group').length + 1);
+                });*/
+                formsList.append(clone);
+            }
+        );
+      }
+};
+
+$(document).on('activateTree', function(event, data){
+  populateTypeMappingTabData(data);
+});
+
+$(window).resize(function() {
+    if(tabLinkId == 'typeMappingTabLink'){
+        var formListHeight = $('.doc-body').height() - 265;
+        $('#formList').height(formListHeight);
+    }
+});
+
+$(document).on('tabSelectedEvent', function(){
+    if(event.target.id == 'typeMappingTabLink'){
+        initSourceAndHiveType();
+        var formListHeight = $('.doc-body').height() - 265;
+        $('#formList').height(formListHeight);
+    }
+});
+
+</script>
+<div class="tab-content">
+    <div class="tab-pane fade active in">
+        <br>
+        <br>
+        <form id="typeMappingTabForm" class="form-inline">
+            <div class="" id="formList" style="overflow: auto;">
+                <div class="form-group" style="display: inline-flex; width: 100%; padding-bottom: 2%;">
+                    <button class="btn add-more addTabrow" type="button">+</button>
+                    <div style="margin-left: 3%;">
+                        <label>Source Type:</label>
+                        <select class="form-control" id="sourceType" style="margin-left: 20px;">
+                        </select>
+                    </div>
+                    <div style="margin-left: 3%;">
+                        <label>HIVE Type:</label>
+                        <select class="form-control" id="hiveType" style="margin-left: 20px;">
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

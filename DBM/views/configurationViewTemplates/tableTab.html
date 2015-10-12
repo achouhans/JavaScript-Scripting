@@ -1,0 +1,83 @@
+<script>
+$(document).on('activateTree', function(event, data){
+    populateTableTabData(data);
+});
+
+var populateTableTabData = function(data){
+
+    var getSourceTableName = data.data.sourceTableName;
+    var getHiveTableName = data.data.hiveTableName;
+    var getCdcColumn = data.data.cdcColumn;
+    var getHivePartitionColumn = data.data.hivePartitionColumn;
+    var getHiveBucketColumn = data.data.hiveBucketColumn;
+    var getHiveBucketCount = data.data.hiveBucketCount;
+
+    if(data != null && data.refKey == "table"){
+        $("#sourceTableName").val(getSourceTableName);
+        $("#hiveTableName").val(getHiveTableName);
+        $("#cdcColumn").val(getCdcColumn);
+        $("#hivePartitionColumn").val(getHivePartitionColumn);
+        $("#hiveBucketColumn").val(getHiveBucketColumn);
+        $("#hiveBucketCount").val(getHiveBucketCount);
+    }
+};
+
+$(document).on('tabSelectedEvent', function(){
+    populateTableTabData(selectedNode);
+});
+</script>
+<div class="tab-content">
+    <div class="tab-pane fade active in" id="tableTabContent">
+       <br><br>
+        <form id="tableTabForm" class="form-horizontal">
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Source Table Name:</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="sourceTableName" placeholder="Source Table Name...">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">HIVE Table Name:</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="hiveTableName" placeholder="HIVE Table Name...">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-2 control-label">CDC Column:</label>
+                <div class="input-group" style="padding-left:15px; padding-right: 15px;">
+                    <input type="text" autocomplete="off" id="cdcColumn" placeholder="Select a CDC Column" class="combobox form-control">             <span class="input-group-addon dropdown-toggle" data-dropdown="dropdown">
+                    <span class="caret"></span> <span class="glyphicon glyphicon-remove"></span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-2 control-label">HIVE Partition Column:</label>
+                <div class="input-group" style="padding-left:15px; padding-right: 15px;">
+                    <input type="text" autocomplete="off" id="hivePartitionColumn" placeholder="HIVE Partition Column..." class="combobox form-control">             <span class="input-group-addon dropdown-toggle" data-dropdown="dropdown">
+                    <span class="caret"></span> <span class="glyphicon glyphicon-remove"></span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-2 control-label">HIVE Bucket Column:</label>
+                <div class="input-group" style="padding-left:15px; padding-right: 15px;">
+                    <input type="text" autocomplete="off" id="hiveBucketColumn" placeholder="HIVE Bucket Column..." class="combobox form-control"> 
+                    <span class="input-group-addon dropdown-toggle" data-dropdown="dropdown">
+                    <span class="caret"></span> <span class="glyphicon glyphicon-remove"></span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-2 control-label">HIVE Bucket Count:</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="hiveBucketCount" placeholder="HIVE Bucket Count...">
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>

@@ -1,0 +1,515 @@
+<script>
+    /* Load Left Side Navigation Menu */
+    var tree, 
+        selectedNode, 
+        selectedNodes = [],
+        activeNode, 
+        isInitialLoad, 
+        isInitialActivation, 
+        hasActiveNode,
+        isInEditMode = false,
+        newServerDetails = {},
+        newDatabaseDetails = {},
+        newTables = {};
+
+    var initializeTree = function() {
+        $("#tree").fancytree({
+            checkbox: true,
+            selectMode: 2,
+            source: getTreeMenuData,
+            extensions: ["filter"],
+            quicksearch: true,
+            onblur: null,
+            filter: {
+                autoApply: false, // Re-apply last filter if lazy data is loaded
+                counter: false, // Show a badge with number of matching child nodes near parent icons
+                fuzzy: false, // Match single characters in order, e.g. 'fb' will match 'FooBar'
+                hideExpandedCounter: false, // Hide counter badge, when parent is expanded
+                highlight: true, // Highlight matches by wrapping inside <mark> tags
+                mode: "hide" // Hide unmatched nodes (pass "dimm" to grayout unmatched node instead)
+            },
+            init: function(event, data, flag) {
+                isInitialLoad = true;
+                isInitialActivation = true;
+                data.tree.activateKey(data.tree.rootNode.children[0].key);
+                activeNode = data.tree.getActiveNode();
+                selectedNode = activeNode;
+                activeNode.setSelected( !activeNode.isSelected() );
+                activeNode.setExpanded(true);
+//                activeNode.setFocus();
+
+            },
+            /*focusTree: function(event, data) {
+//                    alert(event, data);
+//                selectedNodes = data.tree.getSelectedNodes();
+                selectedNode = data.node;
+                /!*if(selectedNodes.length == 1){
+                    if(selectedNode.refKey == "table" && (selectedNodes[0].refKey == "server" || selectedNodes[0].refKey == "database")){
+//                    selectedNode = selectedNodes[0];
+                        selectedNode.setFocus();
+                        selectedNode.setActive();
+                    }
+                }*!/
+                /!*if(selectedNode == null){
+                    selectedNode = data.tree.activeNode;
+                    if(selectedNode.refKey == "table")
+                        selectedNode.setSelected();
+//                        enableDisableTabs("");
+                }*!/
+            },*/
+            activate: function(event, data) {
+                selectedNode = data.node;
+                activeNode = selectedNode;
+                /*var preSelectedNodes = data.tree.getSelectedNodes();
+                $.each(preSelectedNodes, function(i){
+                    if(preSelectedNodes[i].refKey != "rootservernode")
+                        selectedNodes.push(preSelectedNodes[i]);
+                });*/
+                if(selectedNode && selectedNode.refKey == "rootservernode"){
+                    $('#removeTreeNode').prop('disabled',true);
+                    $('#editTreeNode').prop('disabled',true);
+                }else {
+                    $('#removeTreeNode').prop('disabled',false);
+                    $('#editTreeNode').prop('disabled',false);
+                }
+
+                if(selectedNode && selectedNode.refKey == "table")
+                    $('#addTreeNode').prop('disabled',true);
+                else
+                    $('#addTreeNode').prop('disabled',false);
+
+//
+//                selectedNode.setFocus();
+                if( !$.isEmptyObject(selectedNode.data) ){
+//                        alert("custom node data: " + JSON.stringify(node.data));
+                }
+                /*if(data.tree.getActiveNode() != null)
+                    hasActiveNode = true;*/
+                if(!isInitialActivation)
+                    disableTabsAndResetForm();
+                isInitialActivation = false;
+                if(isInEditMode && tree.getActiveNode() != null)
+                    enableDisableTabs("");
+                
+                /* Triggerring the node above */
+                $(document).trigger( "activateTree", [ selectedNode, activeNode ] );
+                
+               
+                
+            },
+            select: function(event, data) {
+                // Display list of selected nodes
+//                data.node.setFocus
+                selectedNode = data.node;
+//                selectedNodes = data.tree.getSelectedNodes();
+//                selectedNodes = data.tree.getSelectedNodes();
+                if(selectedNode && selectedNode.refKey == "table"){
+                    selectedNode.setActive();
+                }
+
+                /*if(selectedNodes.length == 1){
+                    selectedNode = selectedNodes[0];
+                    selectedNode.setFocus();
+                    selectedNode.setActive();
+                }
+                if(selectedNode == null){
+                    selectedNode = data.node;
+                    selectedNode.setFocus();
+                    selectedNode.setActive();
+                }
+                if(data.tree.getActiveNode() != null)
+                    hasActiveNode = true;
+                if(!isInitialLoad)
+                    enableDisableTabs("");
+                isInitialLoad = false;*/
+                /*if(selectedNodes.length == 1){
+                 showHideTabs(selectedNodes);
+                 }*/
+                // convert to title/key array
+                /*var selKeys = $.map(selNodes, function(node) {
+                 return "[" + node.key + "]: '" +
+                 node.title + "'";
+                 });*/
+//                    alert(selKeys.join(", "));
+            },
+            /*click: function(event, data) {
+                // We should not toggle, if target was "checkbox", because this
+                // would result in double-toggle (i.e. no toggle)
+                if(data.node.isExpanded() && data.node.isSelected() && !data.node.isActive()
+                        && (data.node.refKey == "database" || data.node.refKey == "server")
+                        && selectedNode.refKey == "table"){
+                    selectedNode.setActive();
+                }else{
+                    selectedNode = data.node;
+                    selectedNode.setFocus();
+                }
+                if ($.ui.fancytree.getEventTargetType(event) ===
+                        "title") {
+                    data.node.toggleSelected();
+                }
+            },*/
+            keydown: function(event, data) {
+                if (event.which === 32) {
+                    data.node.toggleSelected();
+                    selectedNode = data.node.toggleSelected();
+                    selectedNode.setFocus();
+                    return false;
+                }
+            },
+            // The following options are only required, if we have more than one tree on one page:
+            cookieId: "fancytree-Cb2",
+            idPrefix: "fancytree-Cb2-"
+        });
+    }
+
+    /* Function for search/filter functionality */
+
+    var onTreeSearch = function(event){
+        tree = $("#tree").fancytree("getTree");
+        var n, opts = {
+            leavesOnly: false,
+            highlight: true,
+            autoExpand: true
+        }
+        var match = $(event.target).val();
+
+        if (event && event.which === $.ui.keyCode.ESCAPE || $.trim(match) ===
+                "") {
+            buttonReset(event);
+            return;
+        }
+        // Pass a string to perform case insensitive matching
+        n = tree.filterNodes(match, opts);
+    }
+
+    var buttonReset = function(event) {
+        tree = $("#tree").fancytree("getTree");
+        $("input[name=search]").val("");
+        tree.clearFilter();
+    }
+
+    var removeTreeNode = function(event) {
+        var $message;
+        if(selectedNode.refKey == 'server')
+            $message = 'Server';
+        if(selectedNode.refKey == 'database')
+            $message = 'Database';
+        if(selectedNode.refKey == 'table')
+            $message = 'Table/s';
+
+        BootstrapDialog.show({
+            type: BootstrapDialog.TYPE_PRIMARY,
+            title: 'Delete ' + $message,
+            message: 'Are you sure you want to delete ' + $message.toLowerCase() + '?. There is no Undo.',
+            size: BootstrapDialog.WIDE,
+            buttons: [{
+                label: 'Ok',
+                action: function (dialogRef) {
+                    selectedNode.remove();
+                    // Removing Database Node or server node
+                    if(selectedNode && selectedNode.refKey != "rootservernode" &&
+                            selectedNode.refKey != "table") {
+                        // First Remove it from DB
+                        removeSelectedTreeNodes(selectedNode)
+                            .done( function(data, status, jqXHR) {
+                                // then remove it from UI
+                                selectedNode.remove();
+                            }
+                        )
+                            .fail( function(jqXHR,status,err) {
+                                alert("Error deleting Selected " +selectedNode.refKey + err);
+                            }
+                        );
+                    } // Removing table nodes only
+                    else if(selectedNodes.length > 0) {
+                        tree = $("#tree").fancytree("getTree");
+                        selectedNodes = tree.getSelectedNodes();
+                        var selectedTableNodes = getTableNodesOnly(selectedNodes);
+                        if(selectedTableNodes.length == 0)
+                            return;
+                        // First Remove tables nodes from DB
+                        removeSelectedTreeNodes(selectedTableNodes)
+                            .done( function(data, status, jqXHR) {
+                                        // then remove table nodes from UI
+                                    selectedTableNodes.forEach(function(node) {
+                                            if(node.refKey === "table")
+                                                node.remove();
+                                        });
+                                    }
+                                 )
+                            .fail( function(jqXHR,status,err) {
+                                        alert("Error deleting Selected Table/s " + err);
+                                    }
+                                );
+                    }
+                    dialogRef.close();
+                }
+            },{
+                label: 'Cancel',
+                action: function (dialogRef) {
+                    dialogRef.close();
+                }
+            }]
+        });
+    };
+
+    var getTableNodesOnly = function(selectedNodes){
+        var tableNodes = [];
+        selectedTableNodes.forEach(function(node) {
+            if(node.refKey === "table")
+                tableNodes.push(node);
+        });
+        return tableNodes;
+    };
+
+    var addTreeNode = function(event) {
+
+        // Add Server
+        if(selectedNode.refKey == 'rootservernode') {
+            $.get("views/configurationViewTemplates/serverTab.html", function(data) {
+                var $message =  $(data).find('#serverTabForm');
+                BootstrapDialog.show({
+                    type: BootstrapDialog.TYPE_PRIMARY,
+                    title: 'Add New Server',
+                    message: $message,
+                    cssClass: 'addNewServer',
+                    size: BootstrapDialog.WIDE,
+                    buttons: [{
+                        label: 'Test',
+                        cssClass: 'testNewServer',
+                        action: function (dialogRef) {
+                            // Call service to test
+                        }
+                    },{
+                        label: 'Ok',
+                        action: function (dialogRef) {
+                            tree = $("#tree").fancytree("getTree");
+                            var activeNode = tree.getActiveNode();
+                            var inputs = dialogRef.getModalBody().find('input').toArray();
+                            inputs.forEach(function(element){
+                                switch (element.id){
+                                    case 'hostName':
+                                        newServerDetails.hostName = element.value;
+                                        break;
+                                    case 'port':
+                                        newServerDetails.port = element.value;
+                                        break;
+                                    case 'alias':
+                                        newServerDetails.alias = element.value;
+                                        break;
+                                    case 'username':
+                                        newServerDetails.username = element.value;
+                                        break;
+                                    case 'password':
+                                        newServerDetails.password = element.value;
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            });
+
+                            var server = {
+                                            title: newServerDetails.hostName,
+                                            port: newServerDetails.port,
+                                            alias: newServerDetails.alias,
+                                            username: newServerDetails.username,
+                                            password: newServerDetails.password,
+                                            refKey: 'server',
+                                            folder: true,
+                                            hideCheckbox: true
+                                        };
+                            // First Save it to DB
+                            addSelectedTreeNodes(server)
+                                .done( function(data, status, jqXHR) {
+                                            // then add to the UI
+                                            server.key = data.key;
+                                            var childNode = activeNode.addChildren(server, 0);
+                                            childNode.setActive();
+                                        }
+                                     )
+                                .fail( function(jqXHR,status,err) {
+                                            alert("Error adding Server Nodes " + err);
+                                        }
+                                    );
+                            dialogRef.close();
+                        }
+                    },{
+                        label: 'Cancel',
+                        action: function (dialogRef) {
+                            dialogRef.close();
+                        }
+                    }]
+                });
+            });
+        }
+
+        // Add Database
+        if(selectedNode.refKey == 'server') {
+            $.get("views/dialogs/AddDatabaseDialog.html", function(data) {
+                var $message =  $(data);
+                BootstrapDialog.show({
+                    type: BootstrapDialog.TYPE_PRIMARY,
+                    title: 'Add New Database',
+                    message: $message,
+                    size: BootstrapDialog.WIDE,
+                    buttons: [{
+                        label: 'Ok',
+                        action: function (dialogRef) {
+                            tree = $("#tree").fancytree("getTree");
+                            var activeNode = tree.getActiveNode();
+                            var selectedDatabase = dialogRef.getModalBody().find('select');
+                            newDatabaseDetails.databaseName = $(selectedDatabase).val();
+                            var database = {
+                                title: newDatabaseDetails.databaseName,
+                                refKey: 'database',
+                                folder: true,
+                                hideCheckbox: true,
+                                serverNodeKey: activeNode.key
+                            };
+                            // First Save it to DB
+                            addSelectedTreeNodes(database)
+                                .done( function(data, status, jqXHR) {
+                                            // then add to the UI
+                                            database.key = data.key;
+                                            var childNode;
+                                            try{
+                                                childNode = activeNode.addChildren(database, 0)
+                                            }
+                                            catch(e){
+                                                childNode = activeNode.addChildren(database);
+                                            }
+                                            childNode.setActive();
+                                        }
+                                     )
+                                .fail( function(jqXHR,status,err) {
+                                            alert("Error adding Database Nodes " + err);
+                                        }
+                                    );
+                            
+                            dialogRef.close();
+                        }
+                    },{
+                        label: 'Cancel',
+                        action: function (dialogRef) {
+                            dialogRef.close();
+                        }
+                    }]
+                });
+            });
+        }
+
+        // Add Tables
+        if(selectedNode.refKey == 'database') {
+            $.get("views/dialogs/AddTableDialog.html", function(data) {
+                var $message =  $(data);
+                BootstrapDialog.show({
+                    type: BootstrapDialog.TYPE_PRIMARY,
+                    title: 'Add New Table',
+                    message: $message,
+                    size: BootstrapDialog.WIDE,
+                    buttons: [{
+                        label: 'Ok',
+                        action: function (dialogRef) {
+                            tree = $("#tree").fancytree("getTree");
+                            var activeNode = tree.getActiveNode();
+                            var selectedTable = dialogRef.getModalBody().find('select');
+                            newTables.tablesList = $(selectedTable).val();
+                            newTables.tablesList.forEach(function(table){
+                                var tableNode = {
+                                    title: table,
+                                    refKey: 'table',
+                                    databaseKey: activeNode.key,
+                                    serverKey: activeNode.parent.key
+                                };
+                                addSelectedTreeNodes(tableNode)
+                                    .done( function(data, status, jqXHR) {
+                                                tableNode.key = data.key;
+                                                activeNode.addChildren(tableNode);
+                                            }
+                                         )
+                                    .fail( function(jqXHR,status,err) {
+                                                alert("Error adding Table Nodes " + err);
+                                            }
+                                        );
+                                
+                            });
+                            activeNode.getLastChild().setActive();
+                            dialogRef.close();
+                        }
+                    },{
+                        label: 'Cancel',
+                        action: function (dialogRef) {
+                            dialogRef.close();
+                        }
+                    }]
+                });
+            });
+        }
+    };
+    
+    var editTreeNode = function(event) {
+        isInEditMode = true;
+        tree = $("#tree").fancytree("getTree");
+        if(tree.getActiveNode() != null)
+            enableDisableTabs("");
+    };
+
+    /* Function to Check all Nodes from the Tree View*/
+    function btnCheckAll(e) {
+        $("#tree").fancytree("getTree").visit(function(node) {
+            node.setSelected(true);
+        });
+    };
+    /* Function to UnCheck all Nodes from the Tree View*/
+    function btnUnCheckAll(e) {
+        $("#tree").fancytree("getTree").visit(function(node) {
+            node.setSelected(false);
+        });
+    };
+    /* Function to Submit all Nodes from the Tree View*/
+    function btnSubmitAll(e) {
+        $("#tree").fancytree("getRootNode").visit(function(node) {
+            node.setExpanded(true);
+        });
+    };
+    /* Function to Adjust the Height Automatically*/
+    $('.sidebar').each(function() {
+        var highestBox = 0;
+        $('.ul.fancytree-container', this).each(function() {
+            if ($(this).height() > highestBox) highestBox = $(
+                    this).height();
+        });
+        $('.ul.fancytree-container', this).height(highestBox);
+    });
+
+
+</script>
+
+<div class="sidebar">
+
+    <div class="button-container">
+        <input type="search" placeholder="Search..." autocomplete="off" class="form-controlMod" onkeyup="onTreeSearch(event)" style="border: 1px solid #32CD32;">
+        <button type="button" class="btn btn-default" id="resetSearch" onclick="buttonReset(event)">
+            <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="btn btn-default" id="addTreeNode" onclick="addTreeNode(event)">
+            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+        </button>
+         <button type="button" class="btn btn-default" id="removeTreeNode" onclick="removeTreeNode(event)">
+            <span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="btn btn-default" id="editTreeNode" onclick="editTreeNode(event)">
+            <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+        </button>
+    </div>
+    <div id="tree"></div>
+<!--
+    <div class="button-container1">
+        <input type="button" class="btn btn-default" value="Submit" onclick="btnSubmitAll()">
+        <input type="button" class="btn btn-default" value="Check All" onclick="btnCheckAll()">
+        <input type="button" class="btn btn-default" value="Un-Check All" onclick="btnUnCheckAll()">
+
+    </div>
+-->
+</div>
+

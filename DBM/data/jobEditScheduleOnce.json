@@ -1,0 +1,7 @@
+{
+    "jobScheduleName" : "Sqoop Job Schedule Once",
+    "scheduleType" : "Once",
+    "scheduleEnabled" : true,
+    "oneTimeOccurenceDate" : "09/11/2015",
+    "oneTimeOccurenceTime" : "12:53:01"
+}

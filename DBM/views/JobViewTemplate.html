@@ -1,0 +1,444 @@
+<script>
+    var editor, tableRow, tableData, rowData, jobTitle, selectedJobs = [];
+    
+    var editJobViewData = function(event, title) {
+        jobTitle = title || 'Job Edit Schedule';
+        
+        if(jobTitle == 'Job Edit Schedule'){
+            var jobScheduleData;
+            tableRow = $(event.target).parents('tr');
+            rowData = editor.row(tableRow).data();
+            editJobViewSchedule(rowData.rowId)
+                .done( function(data, status, jqXHR) {
+                    jobScheduleData = data;
+                    editJobSchedule(jobTitle, jobScheduleData, rowData);
+                    })
+                .fail( function(jqXHR,status,err) {
+                    alert("Error loading Job Schedule data" + err);
+                });
+        } else {
+            editJobSchedule(jobTitle);
+        }
+      };
+    
+    var editJobSchedule = function(jobTitle, jobScheduleData, rowData){
+        
+        $.get("views/dialogs/EditJobView.html", function(data) {
+            var $message = $(data).closest('#editJobView');
+            
+            if(jobTitle == 'Job Edit Schedule')
+                populateJobSchedule($message, jobScheduleData);
+
+            BootstrapDialog.show({
+                type: BootstrapDialog.TYPE_PRIMARY,
+                title: jobTitle,
+                message: $message,
+                cssClass: 'editJobModalDialog',
+                size: BootstrapDialog.WIDE,
+                buttons: [{
+                    label: 'OK',
+                    action: function (dialogRef) {
+                        var data = {};
+                        data.jobIds = [];
+                        if(selectedJobs.length > 1){
+                            $.each(selectedJobs, function(i){
+                               data.jobIds.push(selectedJobs[i].rowId);
+                            });
+                        } else {
+                            data.jobIds.push(rowData.rowId);
+                        }
+                        data.schedulingOptions = getJobSchedulingSelectedOptions();
+                        saveJobs(data)
+                                .done(
+                                    function(data, status, jqXHR) {
+                                        if(data) {
+                                            selectedJobs = [];
+                                            if($('.selected').length > 0){
+                                                $('.selected').each(function(i,item){
+                                                $(item).find('#checkBox').attr('checked', false)
+                                                    $(item).removeClass('selected');
+                                                });
+                                                removeMultiJobScheduler();
+                                            }
+                                        }
+                                        else
+                                            alert("Jobs were not saved because...");
+                                    }
+                                )
+                                .fail(
+                                    function(jqXHR,status,err) {
+                                        alert("Error Saving Job Schedules. " + err);
+                                    }
+                                );
+                            dialogRef.close();
+                        }
+                    },{
+                        label: 'Cancel',
+                        action: function (dialogRef) {
+                            dialogRef.close();
+                        }
+                    }]
+                });           
+            });
+    };
+
+    var getPageLengthFromScreenResolution = function(){
+        var screenHeight = window.screen.availHeight + 27;
+        switch (screenHeight){
+            case 768:
+                return 9;
+            case 900:
+                return 12;
+            case 1050:
+                return 15;
+            case 1152:
+                return 17;
+            case 1200:
+                return 18;
+            case 1440:
+                return 21;
+            default :
+                return 15;
+        }
+    }
+    
+    var populateJobSchedule = function($message, jobScheduleData){
+        $($message).find("#jobScheduleName").val(jobScheduleData.jobScheduleName);
+        $($message).find("#scheduleTypeOption").val(jobScheduleData.scheduleType);
+        $($message).find("#scheduledTypeEnableCheckbox").attr("checked",jobScheduleData.scheduleEnabled);
+        $($message).find("#oneTimeOccurrenceInputDP").val(jobScheduleData.oneTimeOccurenceDate);
+        $($message).find("#oneTimeOccurrenceInputTP").val(jobScheduleData.oneTimeOccurenceTime);
+        $($message).find("#selectFrequencyOption").val(jobScheduleData.frequency);
+        $($message).find("#recursEveryInput").val(jobScheduleData.recursEvery);
+        $($message).find("#daySpecificRadio").attr("checked", jobScheduleData.daySpecific);    
+        $($message).find("#daysOf").val(jobScheduleData.dayOf);
+        $($message).find("#ofDayEveryMonth").val(jobScheduleData.daySpecificEveryMonthOf);
+        $($message).find("#dateSpecificRadio").attr("checked", jobScheduleData.dateSpecific);
+        $($message).find("#selectionNumber").val(jobScheduleData.dateOf);
+        $($message).find("#selectionDay").val(jobScheduleData.weekOf);
+        $($message).find("#ofEveryMonth").val(jobScheduleData.dateSpecificEveryMonthOf);
+        if(jobScheduleData.weekDays) {
+            $($message).find("#mondayCheckbox").attr("checked", jobScheduleData.weekDays.monday);
+            $($message).find("#tuesdayCheckbox").attr("checked", jobScheduleData.weekDays.tuesday);
+            $($message).find("#wednesdayCheckbox").attr("checked", jobScheduleData.weekDays.wednesday);
+            $($message).find("#thursdayCheckbox").attr("checked", jobScheduleData.weekDays.thursday);
+            $($message).find("#fridayCheckbox").attr("checked", jobScheduleData.weekDays.friday);
+            $($message).find("#saturdayCheckbox").attr("checked", jobScheduleData.weekDays.saturday);
+            $($message).find("#sundayCheckbox").attr("checked", jobScheduleData.weekDays.sunday);
+        }
+        $($message).find("#occursOnceAtRadio").attr("checked", jobScheduleData.occursOnceAt);
+        $($message).find("#occursOnceAtTP").val(jobScheduleData.occursOnceAtTime);
+        $($message).find("#occursEveryNumberRadio").attr("checked", jobScheduleData.occursEvery);
+        $($message).find("#occursEverynumber").val(jobScheduleData.occursEveryAt);
+        $($message).find("#hoursOption").val(jobScheduleData.occursEveryDurationType);
+        $($message).find("#startingAtInputTP").val(jobScheduleData.startingAt);
+        $($message).find("#endingAtInputTP").val(jobScheduleData.endingAt);
+        $($message).find("#startDateInputDP").val(jobScheduleData.startDateDuration);
+        $($message).find("#endDateInputDP").val(jobScheduleData.endDateDuration);
+        $($message).find("#noEndDateRadio").attr("checked", jobScheduleData.noEndDate);
+    }
+    
+    var getJobSchedulingSelectedOptions = function(){
+        return {
+//            jobScheduleName = dialogRef.defaultOptions.message.find("#jobScheduleName").val();
+            "jobScheduleName" : $("#jobScheduleName").val(),
+            "scheduleType": $("#scheduleTypeOption").val(),
+            "scheduleEnabled": $("#scheduledTypeEnableCheckbox").prop("checked"),
+            "oneTimeOccurenceDate": $("#oneTimeOccurrenceInputDP").val(),
+            "oneTimeOccurenceTime": $("#oneTimeOccurrenceInputTP").val(),
+            "frequency": $("#selectFrequencyOption").val(),
+            "recursEvery": $("#recursEveryInput").val(),
+            "daySpecific": $("#daySpecificRadio").prop("checked"),
+            "dayOf": $("#daysOf").val(),
+            "daySpecificEveryMonthOf": $("#ofDayEveryMonth").val(),
+            "dateSpecific": $("#dateSpecificRadio").prop("checked"),
+            "dateOf": $("#selectionNumber").val(),
+            "weekOf": $("#selectionDay").val(),
+            "dateSpecificEveryMonthOf": $("#ofEveryMonth").val(),
+            "occursOnceAt": $("#occursOnceAtRadio").prop("checked"),
+            "occursOnceAtTime": $("#occursOnceAtTP").val(),
+            "occursEvery": $("#occursEveryNumberRadio").prop("checked"),
+            "occursEveryAt": $("#occursEverynumber").val(),
+            "occursEveryDurationType": $("#hoursOption").val(),
+            "startingAt": $("#startingAtInputTP").val(),
+            "endingAt": $("#endingAtInputTP").val(),
+            "startDateDuration": $("#startDateInputDP").val(),
+            "endDateDuration": $("#endDateInputDP").val(),
+            "noEndDate": $("#noEndDateRadio").prop("checked"),
+            "weekDays": {
+                "monday": $("#mondayCheckbox").prop("checked"),
+                "tuesday": $("#tuesdayCheckbox").prop("checked"),
+                "wednesday": $("#wednesdayCheckbox").prop("checked"),
+                "thursday": $("#thursdayCheckbox").prop("checked"),
+                "friday": $("#fridayCheckbox").prop("checked"),
+                "saturday": $("#saturdayCheckbox").prop("checked"),
+                "sunday": $("#sundayCheckbox").prop("checked")
+            }
+        };
+    }
+    
+    var loadJobViewData = function(){
+        editor = $('#jobViewGrid').DataTable( {
+            "ajax": {
+                "url": 'data/jobViewData.json',
+                "type": 'GET',
+                "dataSrc": function (json) {
+                    if(!json.data){
+                            $('#jobViewGrid').html('No result');
+                            json.data = [];
+                        }
+                    return json.data;
+                }
+            },
+            "deferRender": true,
+            "pagingType": "simple_numbers",
+            "order": [],
+            "pageLength": getPageLengthFromScreenResolution(),
+//            "stateSave": "true",
+//            "info": false,
+//            "dom": "i",
+            language: {
+                searchPlaceholder: "Search Job Views..."
+            },
+            "lengthChange": false,
+//            serverSide: true,
+            /*"rowCallback": function ( row, data ) {
+                // Set the checked state of the checkbox in the table
+                $('input.editor-active', row).prop( 'checked', data.active == 1 );
+            },*/
+            "infoCallback": function( settings, start, end, max, total, pre ) {
+                
+                /* If you need "Page 1 of 3"
+                
+                var api = this.api();
+                var pageInfo = api.page.info();
+                return 'Page '+ (pageInfo.page+1) +' of '+ pageInfo.pages;*/
+                
+                /* If you dont need Info text
+                return "";*/
+                
+                return pre.replace('entries','Job Views');
+              },/*
+            "initComplete": function( settings ) {
+                if(selectedJobs.length > 1)
+                    setMultiJobScheduler();
+            },*/
+            columns: [
+                {
+                    data:   null,
+                    title: "",
+                    render: checkBoxRenderer,
+                    className: "dt-head-center dt-body-center",
+                    orderable: false
+                },
+                {   data: "rowId",
+                    title: "Id",
+                    className: "dt-head-center dt-body-center"
+                },
+                {   data: "tableName",
+                    title: "Table Name",
+                    className: "dt-head-center dt-body-center"
+                },
+                {
+                    data: "status",
+                    title: "Status",
+                    render: labelRenderer
+//                    className: "dt-head-center dt-body-center"
+                },
+                {
+                    data: "scheduleInfo",
+                    title: "Schedule Info",
+                    className: "dt-head-center dt-body-center"
+                },
+                {
+                    data: null,
+                    title: "Log",
+                    className: "dt-head-center dt-body-center"
+                },
+                {   data: null,
+                    title: "",
+                    className: "dt-head-center dt-body-center",
+                    orderable: false
+                }
+            ],
+            "columnDefs":[
+                {
+                    targets: 5,
+                    defaultContent: "<button id='clickButton' onclick='buttonClick(event)'>View Log</button>",
+                    searchable:false,
+                    orderable: false
+                },
+                {
+                    targets: 6,
+                    defaultContent: 
+                        "<div><a href='#' class='glyphicon glyphicon-edit' aria-hidden='true' onclick='editJobViewData(event)' style='color: forestgreen;'/><a href='#' class='glyphicon glyphicon-trash' aria-hidden='true' style='margin-left: 10%;color: #E44545;' onclick='deleteJob(event)'/></div>",
+                    searchable:false,
+                    orderable: false
+                }
+            ]
+        } );
+    };
+
+    var deleteJob = function(event){
+        tableRow = $(event.target).parents('tr');
+        tableData = $(event.target).parents('td');
+        rowData = editor.row(tableRow).data();
+        BootstrapDialog.show({
+            type: BootstrapDialog.TYPE_PRIMARY,
+            title: 'Delete Job for ' + rowData.tableName,
+            message: 'Are you sure you want to delete this job view? There is no Undo.',
+            buttons: [{
+                label: 'Ok',
+                action: function (dialogRef) {
+                    deleteJobService(rowData.rowId)
+                        .done( function(data, status, jqXHR) {
+                            if(data) {
+                                alert("Delete Successful");
+                                editor.row(tableRow).remove().draw();
+                            }
+                            else
+                                alert("Delete Unsuccessful");
+                            dialogRef.close();
+                        }
+                    )
+                        .fail( function(jqXHR,status,err) {
+                            alert("Error Deleting " + err);
+                            dialogRef.close();
+                        }
+                    );
+                }
+            },
+            {
+                label: 'Cancel',
+                action: function (dialogRef) {
+                    dialogRef.close();
+                }
+            }]
+        });
+    };
+
+    var setMultiJobScheduler = function(){
+        if($('#jobViewGrid_filter #multiJobSchedulerButton').length == 0 ) {
+            $('#jobViewGrid_filter').css("float", "inherit");
+            $("<button id='multiJobSchedulerButton' onclick='multiJobScheduler(event)' style='float: left;'>Multi Job Scheduler</button>").prependTo('#jobViewGrid_filter');
+        }
+    };
+
+    var removeMultiJobScheduler = function(){
+        var multiJobScheduler = $('#jobViewGrid_filter #multiJobSchedulerButton');
+        if(multiJobScheduler.length > 0 ) {
+            multiJobScheduler.remove();
+        }
+    };
+
+    var checkBoxRenderer = function ( data, type ) {
+        if ( type === 'display' ) {
+            return '<input type="checkbox" id="checkBox" class="editor-active" onclick="checkboxClick(event)">';
+        }
+        return data;
+    };
+
+    var labelRenderer = function ( data, type ) {
+        if ( type === 'display' ) {
+            switch (data) {
+                case "Not Scheduled Yet":
+                    return '<span class="label label-black">'+data+'</span>';
+                break;
+                case "Running":
+                    return '<span class="label label-yellow">'+data+'</span>';
+                break;
+                case "Successful":
+                    return '<span class="label label-success">'+data+'</span>';
+                break;
+                case "Failed":
+                    return '<span class="label label-danger">'+data+'</span>';
+                break;
+                default :
+                    return data;
+                break;
+            }
+        }
+        return data;
+    };
+
+    var checkboxClick = function(event){
+        tableRow = $(event.target).parents('tr');
+
+        rowData = editor.row(tableRow).data();
+        rowData.isChecked = event.target.checked;
+
+        if(rowData.isChecked && !containsSelectedJob(rowData)){
+            $(tableRow).addClass('selected');
+            selectedJobs.push(rowData);
+        }
+        else if(!rowData.isChecked && containsSelectedJob(rowData)){
+            $(tableRow).removeClass('selected');
+            removeSelectedJobs(rowData);
+        }
+
+
+        if(selectedJobs.length > 1)
+            setMultiJobScheduler();
+        else
+            removeMultiJobScheduler();
+
+//        var str = rowData['active'] == 1 ? 'active' : 'inactive';
+    };
+
+    var removeSelectedJobs = function(rowData) {
+        $.each(selectedJobs, function(i){
+            if(selectedJobs[i].rowId === rowData.rowId) {
+                selectedJobs.splice(i,1);
+                return false;
+            }
+        });
+    };
+    
+    var containsSelectedJob = function(selectedJob){
+        var contains = false;
+        selectedJobs.forEach(function(job){
+            if(job.rowId == selectedJob.rowId){
+                contains = true;
+                return;
+            }
+        });
+        return contains;
+    };
+
+    var buttonClick = function(event){
+        tableRow = $(event.target).parents('tr');
+        rowData = editor.row(tableRow).data();
+
+        getLog(rowData.rowId)
+                .done( function(data, status, jqXHR) {
+                    BootstrapDialog.show({
+                        type: BootstrapDialog.TYPE_PRIMARY,
+                        title: 'Log View for ' + rowData.tableName,
+                        message: data.logData,
+                        buttons: [{
+                            label: 'Ok',
+                            action: function (dialogRef) {
+                                dialogRef.close();
+                            }
+                        }]
+                    });
+                })
+                .fail( function(jqXHR,status,err) {
+                    alert("Error getting log " + err);
+                });
+    };
+    
+    var multiJobScheduler = function(event){
+        tableRow = $(event.target).parents('tr');
+        rowData = editor.row(tableRow).data();
+        editJobViewData(event, 'Multi Job Edit Schedule');
+    };
+        
+
+</script>
+<div class="main jobView">
+                <!--<h1 class="page-header">Job View</h1>-->
+    <div class="table-responsive">
+        <table cellpadding="0" cellspacing="0" border="0" class="display cell-border" id="jobViewGrid" width="100%"></table>
+    </div>
+</div>

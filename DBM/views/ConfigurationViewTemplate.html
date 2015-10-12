@@ -1,0 +1,315 @@
+<script>
+
+    /* Global Variables*/
+    var configurationViewContent;
+    var addImportLink;
+    var tabLinkId;
+
+    $(document).ready(function() {
+        addImportLink = function(url, querySelectorId, linkId) {
+            tabLinkId = linkId;
+            var link = document.createElement('link');
+            link.rel = 'import';
+            link.href = url;
+            link.id = linkId;
+            link.onload = function(event) {
+                var post = this.import.querySelector(
+                    querySelectorId);
+                configurationViewContent.appendChild(post.cloneNode(
+                    true));
+                critical(linkId);
+                $(document).trigger("tabSelectedEvent");
+            };
+            link.onerror = function(e) {
+                alert("Unable to load template: " + "\nId: " + e.target
+                      .id + "\nURL: " + e.target.href);
+                console.log("Unable to load template: " + "\nId: " +
+                            e.target.id + "\nURL: " + e.target.href);
+            };
+            document.head.appendChild(link);
+        }
+    });
+    var loadConfigurationView = function() {
+        configurationViewContent = document.querySelector('.configurationView');
+        addImportLink('views/configurationViewTemplates/serverTab.html',
+                      '.tab-content', 'serverTabLink');
+    };
+    
+    var critical = function(linkId){
+        if (!isInEditMode) {
+            disableTabsAndResetForm();
+            return;
+        }
+        switch(selectedNode.refKey){
+            case 'rootservernode':
+                   disableTabsAndResetForm();
+                break;
+            default:
+                    enableDisableTabs(linkId);
+                    showHideTestButton(linkId);
+                break;
+        }
+    };
+    
+    var onTabClick = function(event) {
+        var targetId = event.target.id;
+        if (targetId == "") return;
+        if (configurationViewContent == null || configurationViewContent ==
+            undefined) configurationViewContent = document.querySelector(
+            '.configurationView');
+        var tabContent = $(".tab-content");
+        if((tabContent).find('form').attr('id') === targetId + 'Form')
+            return;
+        if (tabContent.length)
+            tabContent.remove();
+        switch (targetId) {
+            case "generalMenuTab":
+                addImportLink(
+                    'views/configurationViewTemplates/generalMenuTab.html',
+                    '.tab-content', 'generalMenuTabLink');
+                break;
+            case "sourceTab":
+                addImportLink(
+                    'views/configurationViewTemplates/sourceTab.html',
+                    '.tab-content', 'sourceTabLink');
+                break;
+            case "hiveTab":
+                addImportLink('views/configurationViewTemplates/hiveTab.html',
+                              '.tab-content', 'hiveTabLink');
+                break;
+            case "typeMappingTab":
+                addImportLink(
+                    'views/configurationViewTemplates/typeMappingTab.html',
+                    '.tab-content', 'typeMappingTabLink');
+                break;
+            case "serverTab":
+                addImportLink(
+                    'views/configurationViewTemplates/serverTab.html',
+                    '.tab-content', 'serverTabLink');
+                break;
+            case "tableTab":
+                addImportLink('views/configurationViewTemplates/tableTab.html',
+                              '.tab-content', 'tableTabLink');
+                break;
+            default:
+                break;
+        }
+    };
+
+    var enableDisableTabs = function(tablink){
+        var tabContent = $(".tab-content");
+        if(tabContent.hasClass("disabledTabContent"))
+            tabContent.removeClass("disabledTabContent");
+        var tabFooterButtons = $('.tabFooterButtons');
+        if(tabFooterButtons.hasClass("disabledTabContent"))
+            tabFooterButtons.removeClass("disabledTabContent");
+
+        if(tablink == "")
+            tablink = tabLinkId;
+
+        switch (selectedNode.refKey){
+            case "server":
+                if (tablink != 'serverTabLink') {
+                    disableTabsAndResetForm();
+                }
+
+                break;
+            case "database":
+                if ((tablink != 'generalMenuTabLink' &&
+                        tablink != 'sourceTabLink' &&
+                        tablink != 'hiveTabLink' &&
+                        tablink !='typeMappingTabLink')) {
+                    disableTabsAndResetForm();
+                }
+                break;
+            case "table":
+                if (tablink != 'tableTabLink') {
+                    disableTabsAndResetForm();
+                }
+                break;
+            default:
+                disableTabsAndResetForm();
+                break;
+        }
+    };
+    
+    var disableTabsAndResetForm = function(){
+        $('.tab-content').addClass("disabledTabContent");
+        $('.tabFooterButtons').addClass("disabledTabContent");
+        if(tabLinkId != 'treeLink')
+            reset();
+    };
+
+    var showHideTestButton = function(tablink){
+        var test = $('#test');
+        if(tablink == "typeMappingTabLink" || tablink == "tableTabLink")
+            test.hide();
+        else if(!test.is(':visible'))
+            test.show();
+    };
+
+    var reset = function() {
+        var tabForm = tabLinkId.replace('Link', 'Form');
+        if(tabForm == "typeMappingTabForm")
+            $(".tab-content #typeMappingTabForm .clearfix .form-group:not(:first)").remove();
+        else if (tabForm != "" && tabForm != undefined)
+            document.getElementById(tabForm).reset();
+    };
+
+    var save = function(){
+        var tab = tabLinkId.replace('Link', '');
+        BootstrapDialog.show({
+            type: BootstrapDialog.TYPE_PRIMARY,
+            title: 'Saving ' + tab,
+            message: 'Placeholder',
+            buttons: [{
+                label: 'Ok',
+                action: function (dialogRef) {
+                    var tabForm = "#" + tabLinkId.replace('Link', 'Form');
+                    var $inputs = $(tabForm+" input,"+tabForm+" select,"+tabForm+" textarea");
+                    var values = {};
+                    $inputs.each(function() {
+                        if (values[this.id]) {
+                             if (!values[this.id].push)
+                                values[this.id] = [values[this.id]];
+                             values[this.id].push(this.value || '');
+                            }
+                        else
+                            values[this.id] = this.value || '';
+                    });
+                    values.refKey = activeNode.refKey;
+                    values.key = activeNode.key;
+                    saveForm(values)
+                        .done( function(data, status, jqXHR) {
+                                    if(data) {
+                                        alert("Save Successful");
+                                        isInEditMode = false;
+                                        disableTabsAndResetForm();
+                                        loadTreeData()
+                                            .done(
+                                                function(data, status, jqXHR) {
+                                                    getTreeMenuData = [];
+                                                    getTreeMenuData = data;
+                                                    $('#tree').fancytree("getTree").reload();
+                                                }
+                                        )
+                                            .fail(
+                                                function(jqXHR,status,err) {
+                                                    alert("Save successful but there occurred an error Reloading Tree Data. Reload the page to get the updated/saved tree node. " + err);
+                                                }
+                                        );
+                                    }
+                                    else
+                                        alert("Save Unsuccessful");
+                                    dialogRef.close();
+                                }
+                             )
+                        .fail( function(jqXHR,status,err) {
+                                    alert("Error Saving " + err);
+                                    dialogRef.close();
+                                }
+                            );
+                    }
+                },{
+                label: 'Cancel',
+                action: function (dialogRef) {
+                    dialogRef.close();
+                }
+            }]
+        });
+    };
+
+    var test = function(){
+        var tab = tabLinkId.replace('Link', '');
+        BootstrapDialog.show({
+            type: BootstrapDialog.TYPE_PRIMARY,
+            title: 'Test ' + tab,
+            message: 'Placeholder...',
+            buttons: [{
+                label: 'Ok',
+                action: function (dialogRef) {
+                    var tabForm = "#" + tabLinkId.replace('Link', 'Form');
+                    var $inputs = $(tabForm+" input,"+tabForm+" select,"+tabForm+" textarea");
+                    var values = {};
+                    $inputs.each(function() {
+                        if (values[this.id]) {
+                             if (!values[this.id].push) {
+                                values[this.id] = [values[this.id]];
+                             }
+                             values[this.id].push(this.value || '');
+                            }
+                        else
+                            values[this.id] = this.value || '';
+                    });
+                    testForm(values)
+                        .done( function(data, status, jqXHR) {
+                                    if(data)
+                                        alert("Test Successful");
+                                    else
+                                        alert("Test Unsuccessful");
+                                    dialogRef.close();
+                                }
+                             )
+                        .fail( function(jqXHR,status,err) {
+                                    alert("Error Testing " + err);
+                                    dialogRef.close();
+                                }
+                            );
+                    }
+                },{
+                label: 'Cancel',
+                action: function (dialogRef) {
+                    dialogRef.close();
+                }
+            }]
+        });
+    };
+</script>
+
+<div class="main configurationView">
+    <div>
+        <ul class="nav nav-tabs" onclick="onTabClick(event)">
+            <li class="active">
+                <a data-toggle="tab" href="#" aria-expanded="false" id="serverTab">Server</a>
+            </li>
+
+            <li class="">
+                <a data-toggle="tab" href="#" aria-expanded="true" id="generalMenuTab" >General</a>
+            </li>
+
+            <li class="">
+                <a data-toggle="tab" href="#" aria-expanded="false" id="sourceTab">Source</a>
+            </li>
+
+            <li class="">
+                <a data-toggle="tab" href="#" aria-expanded="false" id="hiveTab">Hive</a>
+            </li>
+
+            <li class="">
+                <a data-toggle="tab" href="#" aria-expanded="false" id="typeMappingTab">Type Mapping</a>
+            </li>
+
+            <li class="">
+                <a data-toggle="tab" href="#" aria-expanded="false" id="tableTab">Table</a>
+            </li>
+        </ul>
+    </div>
+
+    <!--<div class="row tabFooterButtons">
+
+        <div class="col-xs-6 col-sm-8">
+            <input type="button" class="btn btn-default" value="Test" id="test" onclick="test()">
+        </div>
+        <div class="col-xs-1 saveResetDiv" style="display: inline-flex; float: right; margin-left: 92%;">
+            <input type="button" class="btn btn-default" value="Save" onclick="save()">
+            <input type="button" id="resetFormsButton" class="btn btn-default" value="Reset" onclick="reset()" style="margin-left: 50%;">
+        </div>
+    </div>-->
+    <div class="form-row tabFooterButtons">
+        <button class="btn sample btn-sample testButton" onclick="test()" type="button">Test</button>
+        <div class="saveResetDiv">
+            <button class="btn sample btn-sample saveButton" onclick="save()" type="button">Save</button>
+            <button class="btn sample btn-sample resetButton" id="resetFormsButton" onclick="reset()" type="button">Reset</button>
+        </div>
+    </div>
+</div>

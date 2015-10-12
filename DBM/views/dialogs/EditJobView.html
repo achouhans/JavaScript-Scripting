@@ -1,0 +1,296 @@
+<div id="editJobView">
+    <script>
+        $(function () {
+            $('#oneTimeOccurrenceDP').datetimepicker({
+                useCurrent: false,
+                format: 'MM/DD/YYYY'/*,
+                widgetPositioning: {
+                    vertical: 'auto',
+                    horizontal: 'right'
+                }*/
+                /*icons: {
+                    date: "fa fa-calendar"
+                }*/
+            });
+            $('#startDateDP').datetimepicker({
+                useCurrent: false,
+                format: 'MM/DD/YYYY'
+            });
+            $('#endDateDP').datetimepicker({
+                useCurrent: false,
+                format: 'MM/DD/YYYY'
+            });
+            $('#oneTimeOccurrenceTP').datetimepicker({
+                format: 'HH:mm:ss'
+            });
+            $('#occursOnceAt').datetimepicker({
+                format: 'HH:mm:ss'
+            });
+            $('#startingAtTP').datetimepicker({
+                format: 'HH:mm:ss'
+            });
+            $('#endingAtTP').datetimepicker({
+                format: 'HH:mm:ss'
+            });
+        });
+
+        var scheduleType = function() {
+            scheduleTypeValue = $('#scheduleTypeOption').val();
+            if(scheduleTypeValue == 'Once'){
+                $('#once').show();
+                $('#recurring').hide();
+            } else {
+                $('#recurring').show();
+                $('#once').hide();
+            }
+        };
+
+        scheduleType();
+
+        var selectFrequency = function(){
+            frequency= $('#selectFrequencyOption').val();
+            
+            if(frequency == 'Daily'){
+                $('#daily').show();
+                $('#dailyLabel').text("day(s)");
+                $('#weekdays').hide();
+                $('#monthly').hide();
+
+                $('#dailyFrequency').show();
+                $('#weeklyFrequency').hide();
+                $('#monthlyFrequency').hide();
+            }
+            if(frequency == 'Weekly'){
+                $('#daily').show();
+                $('#dailyLabel').text("");
+                $('#weekdays').show();
+                $('#monthly').hide();
+
+                $('#dailyFrequency').hide();
+                $('#weeklyFrequency').show();
+                $('#monthlyFrequency').hide();
+            }
+            if(frequency == 'Monthly'){
+                $('#daily').hide();
+                $('#weekdays').hide();
+                $('#monthly').show();
+
+                $('#dailyFrequency').hide();
+                $('#weeklyFrequency').hide();
+                $('#monthlyFrequency').show();
+            }
+        };
+
+        selectFrequency();
+    </script>
+    <fieldset>
+        <form class="form-horizontal">
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Name:</label>
+                <div class="col-sm-10">
+                    <input id="jobScheduleName" type="text" class="form-control" placeholder="Job Schedule Name...">
+                    <br>
+                </div>
+                <label class="col-sm-2 control-label">Schedule Type:</label>
+                <div class="col-sm-6">
+                    <select onchange="scheduleType()" class="form-control" id="scheduleTypeOption">
+                         <option>Once</option>
+                         <option>Recurring</option>
+                    </select>
+                </div>
+                <span>
+                    <label class="checkbox-inline">
+                        <input type="checkbox" id="scheduledTypeEnableCheckbox" value="option1">Enabled
+                    </label>
+                </span>
+            </div>
+            <hr/>
+
+            <!-- Once-->
+            <div id="once">
+                <h4 style="font-weight: bold;">One Time Occurrence</h4>
+                <br>
+                <div class="form-group row">
+                    <div id="oneTimeOccurrenceDP" class="input-group date col-sm-5" style="display: inline-flex;">
+                        <label class="col-sm-4 control-label">Date:</label>
+                        <input id="oneTimeOccurrenceInputDP" type="text" class="form-control" placeholder="MM/DD/YYYY"/>
+                        <span class="input-group-addon" style="width: 15%;">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                    </div>
+                    <div id="oneTimeOccurrenceTP" class="input-group date col-sm-5" style="display: inline-flex;">
+                        <label class="col-sm-4 control-label">Time:</label>
+                        <input id="oneTimeOccurrenceInputTP" type="text" class="form-control" placeholder="HH:MM:SS"/>
+                        <span class="input-group-addon" style="width: 15%;">
+                            <span class="glyphicon glyphicon-time"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!--Recurring-->
+            <div id="recurring">
+                <h4 style="font-weight: bold;">Frequency</h4>
+                <br>
+                <div class="form-group row">
+                    <div class="col-sm-5" style="display: inline-flex;">
+                        <label class="col-sm-6 control-label">Occurs:</label>
+                        <select onchange="selectFrequency()" class="form-control" id="selectFrequencyOption">
+                             <option>Daily</option>
+                             <option>Weekly</option>
+                             <option>Monthly</option>
+                        </select>
+                    </div>
+                    <div id="daily" class="col-sm-6" style="display: inline-flex;">
+                        <label class="col-sm-6 control-label">Recurs every:</label>
+                        <div class="col-sm-5">
+                            <input id="recursEveryInput" type="number" name="days" min="1" max="31" class="form-control"/>
+                        </div>
+                        <label id="dailyLabel" class="control-label">day(s)</label>
+                    </div>
+
+                    <div id="weekdays" class="form-group form-inline" style="margin-left: 6%;">
+                        <br><br><br>
+                        <label id="weeklyLabel" class="control-label">Week(s) of these days:</label>
+                        <span style="margin-left: 3%;">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="mondayCheckbox" value="monday">Mon
+                            </label>
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="tuesdayCheckbox" value="tuesday">Tue
+                            </label>
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="wednesdayCheckbox" value="wednesday">Wed
+                            </label>
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="thursdayCheckbox" value="thursday">Thu
+                            </label>
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="fridayCheckbox" value="friday">Fri
+                            </label>
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="saturdayCheckbox" value="saturday">Sat
+                            </label>
+                            <label class="checkbox-inline">
+                                <input type="checkbox" id="sundayCheckbox" value="sunday">Sun
+                            </label>
+                        </span>
+                    </div>
+
+                    <!-- Monthly Frequency-->
+                    <div id="monthlyFrequency">
+                        <br><br><br>
+                        <div class="form-group row col-sm-10" style="margin-left: 1%;display: inline-flex;">
+                            <div class="radio col-sm-2"><label class="control-label" style="font-weight: bold;display: initial;">
+                                <input id="daySpecificRadio" type="radio" name="monthlyFrequencyRadioGroup">Day</label>
+                            </div>
+                            <input id="daysOf" type="number" name="days" class="form-control" min="1" max="24" style="width: 20%;">
+                            <label class="control-label col-sm-14" style="font-weight: bold;width: 14%;">of every</label>
+                            <input id="ofDayEveryMonth" type="number" name="days" class="form-control" min="1" max="24" style="width: 18%;margin-left: 3%;">
+                            <label class="control-label col-sm-1" style="font-weight: bold;">month(s)</label>
+                        </div>
+                        <br>
+                        <div class="form-group row col-sm-11" style="margin-left: 1%;display: inline-flex;">
+                            <div class="radio col-sm-2">
+                                <label class="control-label" style="font-weight: bold;display: initial;"><input type="radio" name="monthlyFrequencyRadioGroup" id="dateSpecificRadio">The</label>
+                            </div>
+                            <select class="form-control" id="selectionNumber" style="">
+                                <option value="1">First</option>
+                                <option value="2">Second</option>
+                                <option value="3">Third</option>
+                                <option value="4">Fourth</option>
+                            </select>
+                            <select class="form-control" id="selectionDay" style="margin-left: 5%;/* display: initial; */">
+                                <option value="1">Sunday</option>
+                                <option value="2">Monday</option>
+                                <option value="3">Tuesday</option>
+                                <option value="4">Wednesday</option>
+                                <option value="5">Thursday</option>
+                                <option value="6">Friday</option>
+                                <option value="7">Saturday</option>
+                            </select>
+                            <label class="control-label col-sm-24" style="font-weight: bold;width: 60%;/* margin-left: -15%; */">of every</label>
+                            <input id="ofEveryMonth" type="number" name="days" class="form-control" min="1" max="24" style="width: 50%;margin-left: 3%;">
+                            <label class="control-label col-sm-1" style="font-weight: bold;">month(s)</label>
+                        </div>
+                        <br>
+                    </div>
+                </div>
+
+                <!-- Daily Frequency-->
+                <div id="dailyFrequency">
+                    <hr>
+                    <h4 style="font-weight: bold;">Daily Frequency</h4>
+                    <br>
+                    <div class="form-group">
+                        <div class="radio col-sm-3" style="margin-left: 3%;">
+                            <label class="control-label" style="font-weight: bold;"><input id="occursOnceAtRadio" type="radio" name="dailyFrequencyRadioGroup">Occurs once at:</label>
+                        </div>
+                        <div id="occursOnceAt" class="input-group date col-sm-3" style="display: inline-flex;">
+                            <input id="occursOnceAtTP" type="text" class="form-control" placeholder="HH:MM:SS" style="margin-left: 6%;width: 55%;"/>
+                             <span class="input-group-addon" style="width: 25%;">
+                                <span class="glyphicon glyphicon-time" style="padding-top: 1px;"></span>
+                             </span>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-left: 1%;">
+                        <div class="radio col-sm-3">
+                            <label class="control-label" style="font-weight: bold;"><input type="radio" name="dailyFrequencyRadioGroup" id="occursEveryNumberRadio">Occurs every:</label>
+                        </div>
+                        <div class="col-sm-3">
+                            <input id="occursEverynumber" type="number" name="days" class="form-control" min="1" max="24">
+                        </div>
+                        <div class="col-sm-3">
+                            <select id="hoursOption" onchange="" class="form-control">
+                                <option value="1">Hours</option>
+                            </select>
+                        </div>
+                    </div>
+                    <br>
+                    <div class="form-group row" style="float: left;display: inline-flex;">
+                        <div id="startingAtTP" class="input-group date col-sm-6" style="display: inline-flex;">
+                            <label class="control-label col-sm-8">Starting at:</label>
+                            <input id="startingAtInputTP" type="text" class="form-control" placeholder="HH:MM:SS" style="width: 55%;">
+                            <span class="input-group-addon" style="width: 15%;">
+                                <span class="glyphicon glyphicon-time"></span>
+                             </span>
+                        </div>
+                        <div id="endingAtTP" class="input-group date col-sm-6" style="display: inline-flex;">
+                            <label class="control-label col-sm-7">Ending at:</label>
+                            <input id="endingAtInputTP" type="text" class="form-control" placeholder="HH:MM:SS" style="width: 48%;">
+                              <span class="input-group-addon" style="width: 15%;">
+                                <span class="glyphicon glyphicon-time"></span>
+                             </span>
+                        </div>
+                    </div><br><br>
+                </div>
+
+                <!-- Duration -->
+                <div id="duration">
+                     <hr width="100%">
+                     <h4 style="font-weight: bold;">Duration</h4>
+                     <div class="form-group row">
+                         <br>
+                         <div id="startDateDP" class="input-group date col-sm-5" style="display: inline-flex;">
+                             <label class="control-label col-sm-8">Start Date:</label>
+                             <input id="startDateInputDP" type="text" class="form-control" placeholder="MM/DD/YYYY"/>
+                             <span class="input-group-addon" style="width: 15%;">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                             </span>
+                         </div>
+                         <div id="endDateDP" class="input-group date col-sm-5" style="display: inline-flex;">
+                             <label class="control-label col-sm-7">End Date:</label>
+                             <input id="endDateInputDP" type="text" class="form-control" placeholder="MM/DD/YYYY"/>
+                             <span class="input-group-addon" style="width: 15%;">
+                                <span class="glyphicon glyphicon-calendar"></span>
+                             </span>
+                         </div>
+                         <div class="radio" style="margin-right: 29%;" align="right">
+                             <label class="control-label" style="font-weight: bold;"><input type="radio" name="durationRadioGroup" id="noEndDateRadio">No end date</label>
+                         </div>
+                     </div>
+                 </div>
+            </div>
+        </form>
+    </fieldset>
+</div>

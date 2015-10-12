@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- 1366 x 768-->
+    <meta charset="utf-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta content="" name="description">
+    <meta content="" name="author"><link href="images/favicon.ico" rel="shortcut icon">
+    
+    <title>Sqoop Database Ingestion</title>
+    
+    <!-- DocPad Meta -->
+    <meta name="generator" content="DocPad v6.63.8" />
+
+    <!-- ModernizrJS :: PolyFill for handling compatibility issues -->
+    <script defer="defer"  src="libs/modernizr.js"></script>
+
+    <!--Styles-->
+    <link href="images/skin-xp/ui.fancytree.css" rel="stylesheet" type="text/css">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="libs/bootstrap.min.css">
+    <link rel="stylesheet" href="libs/bootstrap-dialog.min.css">
+    <link rel="stylesheet" href="libs/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="libs/buttons.dataTables.min.css">
+    <link rel="stylesheet" href="libs/select.dataTables.min.css">
+    <link href="libs/select2.min.css" rel="stylesheet" />
+    <link href="css/a.css" rel="stylesheet">
+    <link href="css/tree.css" rel="stylesheet">
+    <link href="css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+    <link href="libs/font-awesome.css" rel="stylesheet"/>
+
+
+    <!--Scripts -->
+
+    <script src="libs/jquery.min.js"></script>
+    <script src="libs/bootstrap.min.js"></script>
+    <script src="libs/bootstrap-dialog.min.js"></script>
+    <script src="libs/jquery-ui.min.js"></script>
+    <script src="libs/jquery.fancytree-all.min.js"></script>
+    <script src="libs/select2.min.js"></script>
+    <script src="libs/fancytreeFilterLib.js" type="text/javascript"></script>
+    <script src="libs/jquery.fancytree.edit.js" type="text/javascript"></script>
+
+    <script src="libs/jquery.dataTables.min.js"></script>
+    <script src="libs/dataTables.buttons.min.js"></script>
+    <script src="libs/dataTables.select.min.js"></script>
+    <script src="libs/tree.js"></script>
+    <script src="libs/moment-with-locales.js"></script>
+    <script src="libs/bootstrap-datetimepicker.min.js"></script>
+    <script src="services/services.js"></script>
+    <script src="services/TreeTemplateService.js"></script>
+    <script src="services/ConfigurationViewService.js"></script>
+    <script src="services/JobViewService.js"></script>
+    <script src="views/utils/loader.js"></script>
+    
+    <script type="text/javascript">
+        var $ = $.noConflict();
+        $(document).ready(function ($) {
+            
+            /* Set Button Text on Default State - onload*/
+
+            $('.toggleButton').text("Job View");
+
+            /* Function for Button Click */
+            var buttonText;
+            $('.toggleButton').click(function () {
+                $(this).text(function (i, v) {
+                    toggleView(v);
+                    return buttonText;
+                });
+            });
+
+            /* Toggle between views - Job/Congiguration View */
+            var toggleView = function (v) {
+                if (v === 'Job View') {
+                    if($('.configurationView').length)
+                        $('.configurationView').hide();
+
+                    if($('.jobView').length)
+                        $('.jobView').show();
+                    else
+                        addImportLink('views/JobViewTemplate.html', '.jobView', 'jobViewLink');
+
+
+                    buttonText = 'Configuration View';
+                } else {
+                    if($('.jobView').length)
+                        $('.jobView').hide();
+
+                    if($('.configurationView').length)
+                        $('.configurationView').show();
+                    else
+                        addImportLink('views/ConfigurationViewTemplate.html', '.configurationView', 'configurationViewLink');
+
+                    buttonText = 'Job View';
+                }
+            };
+
+            var container = document.querySelector('.container');
+            var addImportLink = function(url, querySelectorId, linkId) {
+                var link = document.createElement('link');
+                link.rel = 'import';
+                link.href = url;
+                link.id = linkId;
+                link.onload = function(event) {
+                    var post = this.import.querySelector(querySelectorId);
+                    container.appendChild(post.cloneNode(true));
+                    if(event.target.id == 'treeLink')
+                        initializeTree();
+                    if(event.target.id == 'jobViewLink')
+                        loadJobViewData();
+                    if(event.target.id == 'configurationViewLink')
+                        loadConfigurationView();
+                };
+                link.onerror = function(e){
+                //    alert("Unable to load template: " + "\nId: " + event.target.id + "\nURL: " + e.target.href);
+                    console.log("Unable to load template: " + "\nId: " + event.target.id + "\nURL: " + e.target.href);
+                }
+                document.head.appendChild(link);
+            }
+
+            /* On Initial Load, show configuration view */
+            loadTreeData()
+                .done(
+                        function(data, status, jqXHR) {
+                            getTreeMenuData = data;
+                            addImportLink('views/TreeTemplate.html', '.sidebar', 'treeLink');
+                            toggleView('');
+                        }
+                    )
+                .fail(
+                        function(jqXHR,status,err) {
+                            alert("Error loading Tree Data " + err);
+                        }
+                );
+
+            // Create the XHR object.
+            function createCORSRequest(method, url) {
+                var xhr = new XMLHttpRequest();
+                if ("withCredentials" in xhr) {
+                    // XHR for Chrome/Firefox/Opera/Safari.
+                    xhr.open(method, url, true);
+                } else if (typeof XDomainRequest != "undefined") {
+                    // XDomainRequest for IE.
+                    xhr = new XDomainRequest();
+                    xhr.open(method, url);
+                } else {
+                    // CORS not supported.
+                    xhr = null;
+                }
+                return xhr;
+            }
+
+            // Helper method to parse the title tag from the response.
+            function getTitle(text) {
+                return text.match('<title>(.*)?<\/title>')[1];
+            }
+
+            // Make the actual CORS request.
+            function makeCorsRequest() {
+                // All HTML5 Rocks properties support CORS.
+                var url = 'http://updates.html5rocks.com';
+
+                var xhr = createCORSRequest('GET', url);
+                if (!xhr) {
+                 //   alert('CORS not supported');
+                    return;
+                }
+
+                // Response handlers.
+                xhr.onload = function () {
+                    var text = xhr.responseText;
+                    var title = getTitle(text);
+                  //  alert('Response from CORS request to ' + url + ': ' + title);
+                };
+
+                xhr.onerror = function () {
+              //      alert('Woops, there was an error making the request.');
+                };
+
+                xhr.send();
+            }
+            
+        });
+
+        $( document ).ajaxStart(function() {
+            ajaxindicatorstart('loading data.. please wait..');
+        }).ajaxStop(function () {
+            ajaxindicatorstop();
+        });
+
+    </script>
+</head>
+
+<body>
+    
+    <div class="navbar-inverse navbar-fixed-top">
+      <p class="headerTitle">
+        <i class="fa fa-database">  Sqoop Data Ingestion</i>
+          <button class="btn sample btn-sample toggleButton" type="button" onclick=""></button>
+      </p>
+        <hr class="headerHR">
+    </div>
+    
+     <div class="container-fluid">
+        <div class="container"></div>
+    </div>
+
+    <footer>
+        <p class="footerText">Sqoop Data Ingestion Application &copy; 2013 - 2015</p>
+    </footer>
+</body>
+</html>

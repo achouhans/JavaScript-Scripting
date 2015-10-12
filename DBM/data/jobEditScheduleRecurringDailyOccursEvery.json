@@ -1,0 +1,15 @@
+{
+    "jobScheduleName" : "Sqoop Job Schedule Recurring Daily Occurs Every",
+    "scheduleType" : "Recurring",
+    "scheduleEnabled" : true,
+    "frequency": "Daily",
+    "recursEvery": "2",
+    "occursEvery": true,
+    "occursEveryAt": "1",
+    "occursEveryDurationType": "Hours",
+    "startingAt": "13:01:15",
+    "endingAt": "16:01:56",
+    "startDateDuration": "09/09/2015",
+    "endDateDuration": "10/01/2015",
+    "noEndDate": false
+}

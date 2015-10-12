@@ -1,0 +1,19 @@
+{
+    "jobScheduleName" : "Sqoop Job Schedule Recurring Weekly",
+    "scheduleType" : "Recurring",
+    "scheduleEnabled" : true,
+    "frequency": "Weekly",
+    "recursEvery": "2",
+    "weekDays": {
+            "monday": true,
+            "tuesday": false,
+            "wednesday": true,
+            "thursday": false,
+            "friday": true,
+            "saturday": false,
+            "sunday": true
+        },
+    "startDateDuration": "09/09/2015",
+    "endDateDuration": "10/01/2015",
+    "noEndDate": true
+}

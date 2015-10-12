@@ -1,0 +1,87 @@
+<script type="text/javascript">
+var initDBType = function() {
+    loadDBType()
+        .done(
+            function(data, status, jqXHR) {
+                $.each(data, function(i,item){
+                    // Create and append the new options into the select list
+                    $("#dbType").append("<option>"+item.value+"</option>");
+                    populateSourceTab(selectedNode);
+                });
+              }
+            )
+        .fail(
+            function(jqXHR,status,err) {
+                alert("Error loading DB Type " + err);
+            }
+        );
+};
+
+$(document).on('activateTree', function(event, data){
+  populateSourceTab(data);
+});
+
+var populateSourceTab = function(data){
+    var getHostName = data.parent.title;
+    var getPortNum = data.parent.data.port;
+    var getDataBaseName = data.title;
+    var getDbType = data.data.dbType;
+    var getUsername = data.parent.data.userName;
+
+    if(data != null && data.refKey == "database"){
+         $("#hostName").val(getHostName);
+         $("#port").val(getPortNum);
+         $("#databaseName").val(getDataBaseName);
+         $("#dbType").val(getDbType);
+         $("#username").val(getUsername);
+    }
+};
+
+$(document).on('tabSelectedEvent', function(){
+   initDBType();
+});
+</script>
+<div class="tab-content">
+    <div class="tab-pane fade active in" id="sourceTabContent">
+        <br><br>
+        <form id="sourceTabForm" class="form-horizontal">
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Host Name:</label>
+                <div class="col-sm-10">
+                    <input type="text" id="hostName" class="form-control" placeholder="Host Name...">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">PORT:</label>
+                <div class="col-sm-10">
+                    <input type="text" id="port" class="form-control" placeholder="Port Number...">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Database Name:</label>
+                <div class="col-sm-10">
+                    <input type="text" id="databaseName" class="form-control" placeholder="Database Name...">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">DB Type:</label>
+                <div class="col-sm-10">
+                    <select class="form-control" id="dbType">
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                    <label class="col-sm-2 control-label">Username</label>
+                    <div class="col-sm-10">
+                        <input type="text" id="username" class="form-control" placeholder="Username...">
+                </div>
+            </div>
+            <div class="form-group">
+                    <label class="col-sm-2 control-label">Password</label>
+                    <div class="col-sm-10">
+                        <input type="password" class="form-control" placeholder="Password...">
+                    </div>
+            </div>
+        </form>
+    </div>
+</div>

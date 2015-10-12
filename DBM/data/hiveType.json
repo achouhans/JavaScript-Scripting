@@ -1,0 +1,17 @@
+[
+    {
+      "value" : "String"
+    },
+    {  
+      "value" : "Boolean"
+    },
+    {
+      "value" : "Int"
+    },
+    {
+      "value" : "Double"
+    },
+    {  
+      "value" : "Float"
+    }
+]

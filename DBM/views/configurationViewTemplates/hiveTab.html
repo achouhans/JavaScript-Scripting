@@ -1,0 +1,46 @@
+<script>
+$(document).on('activateTree', function(event, data){
+    populateHiveTabData(data);
+});
+
+var populateHiveTabData = function(data){
+    var getDbname = data.title;
+    var getUsername = data.data.hiveUsername;
+    var getTableDir = data.data.tableDirectoryOnHDFS;
+
+    if(data != null && data.refKey == "database"){
+         $("#dbName").val(getDbname);
+         $("#username").val(getUsername);
+         $("#tableDir").val(getTableDir);
+    }
+};
+
+$(document).on('tabSelectedEvent', function(){
+    populateHiveTabData(selectedNode);
+});
+</script>
+<div class="tab-content">
+    <div class="tab-pane fade active in" id="hiveTabContent">
+        <br><br>
+        <form id="hiveTabForm" class="form-horizontal">
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Database Name:</label>
+                <div class="col-sm-10">
+                    <input type="text" id="dbName" class="form-control" placeholder="Database Name...">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Hive Username:</label>
+                <div class="col-sm-10">
+                    <input type="text" id="username" class="form-control" placeholder="Username...">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Table Directory on HDFS:</label>
+                <div class="col-sm-10">
+                    <input type="text" id="tableDir" class="form-control" placeholder="Directory...">
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

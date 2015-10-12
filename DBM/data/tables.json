@@ -1,0 +1,15 @@
+[
+    {   "value" : "C_BILLING"   },
+    {   "value" : "C_CONTRACT_HIST"   },
+    {   "value" : "C_VENDOR"   },
+    {   "value" : "C_SUPPLIER"   },
+    {   "value" : "C_RATE"   },
+    {   "value" : "C_CLAUSE"   },
+    {   "value" : "C_CONTRACT"   },
+    {   "value" : "C_RATE_DIM"   },
+    {   "value" : "C_VENDOR_HIST"   },
+    {   "value" : "C_BILLING_HIST"   },
+    {   "value" : "C_CLAUSE_TEMPLATE"   },
+    {   "value" : "METADIRECTORY_FEED"   },
+    {   "value" : "METADIRECTORY_NEW"  }
+]
